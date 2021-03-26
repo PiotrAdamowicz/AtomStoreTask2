@@ -1,51 +1,53 @@
 <template>
-  <div id="app">
-    <img alt="Vue logo" src="./assets/logo.png">
-    <HelloWorld msg="Something works"/>
+  <div id="app">        
     <line-chart  v-if="loaded" :chartdata="chartdata" :options="options" />
   </div>
 </template>
 
 <script>
-import HelloWorld from './components/HelloWorld.vue';
 import axios from "axios"
-
 
 export default {
   name: 'App',
-  components: {
-    HelloWorld
-  },
+  
   data:()=>({
     loaded: false,
     chartdata:null,
-    countrys:[],
     options:{
-        responsive: true,
-        maintainAspectRatio: false
-        }
+      responsive: true,
+      maintainAspectRatio: false
+      }
   }),
   async mounted (){
+    const api_url = 'https://covid-api.mmediagroup.fr/v1/history?status=Confirmed&continent=Europe';
     this.loaded = false;
-    axios.get('https://covid-api.mmediagroup.fr/v1/history?status=Confirmed&continent=Europe')
+    axios.get(api_url)
     .then((res)=>{
       const covidData = res.data;
+      
+      function datasetMaker(){    
+        let result = [];    
+        for (const country of Object.entries(covidData)){
+          result.push({label:country[0],data:(Object.values(country[1].All.dates)).reverse()})
+        }
+        return result
+      }
+      console.log(datasetMaker())
+
       this.chartdata ={
         labels: [...(Object.keys(covidData.Albania.All.dates)).reverse()],
-        datasets:[
-          {
-            label:covidData.Albania.All.country,
-            backgroundColor: "#00aa00",
-            data:(Object.values(covidData.Albania.All.dates)).reverse()           
-          },
-          {
-            label:covidData.Poland.All.country,
-            backgroundColor: "#ff0000",
-            data:(Object.values(covidData.Poland.All.dates)).reverse()
-          }
-        ]
+        datasets:datasetMaker()
+        // [
+        //   {
+        //     label:covidData[0],
+        //     borderColor: "#00aa00",
+        //     data:[1,2,3,4,5,6,7]         
+        //   }
+         
+        // ]
       };
-      console.log(covidData.Poland.All)
+      console.log(covidData)
+      
       this.loaded=true;
     })
     .catch((err)=>{
@@ -55,6 +57,7 @@ export default {
 
   }
 }
+
 </script>
 
 <style>
@@ -82,4 +85,4 @@ data: ()=>({
         
     }
   }),
-  //TODO: map all the countrys to datasets and label
+ 
