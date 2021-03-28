@@ -1,61 +1,80 @@
 <template>
   <div id="app">        
     <line-chart  v-if="loaded" :chartdata="chartdata" :options="options" />
-  </div>
+  </div>  
 </template>
 
 <script>
 import axios from "axios"
 
+const api_url = 'https://covid-api.mmediagroup.fr/v1/history?status=Confirmed&continent=Europe';
+const randomColorGenerator=()=>{
+  // TODO:randomize leter, number order/position
+  const leter =()=>"abcdef"[Math.abs(Math.floor(Math.random()*10-5))];
+  const number=()=>Math.floor(Math.random()*10);
+  const R = `${number()}${leter()}`;
+  const G = `${number()}${leter()}`;
+  const B = `${number()}${leter()}`;
+  return(`#${R}${G}${B}`)
+}
+
 export default {
   name: 'App',
+  data: function(){
+    return{
+      loaded: false,
+      chartdata:null,
+      covidData:null,
+      options:{
+        responsive: true,
+        maintainAspectRatio: false
+      }}
+  }, 
   
-  data:()=>({
-    loaded: false,
-    chartdata:null,
-    options:{
-      responsive: true,
-      maintainAspectRatio: false
-      }
-  }),
   async mounted (){
-    const api_url = 'https://covid-api.mmediagroup.fr/v1/history?status=Confirmed&continent=Europe';
     this.loaded = false;
     axios.get(api_url)
-    .then((res)=>{
-      const covidData = res.data;
-      
-      function datasetMaker(){    
-        let result = [];    
-        for (const country of Object.entries(covidData)){
-          result.push({label:country[0],data:(Object.values(country[1].All.dates)).reverse()})
+      .then((res)=>{   
+        
+      function covidDataMaker(){
+        let result = [];
+        for(const country of Object.entries(res.data)){
+          result.push(
+            {country:country[1].All.country,
+              iso: country[1].All.iso,
+              population: country[1].All.population
+              })          
         }
+        result.sort((a,b)=>{
+          if(a.population>b.population)return -1;
+          if(a.population<b.population)return 1;
+          return 0
+        });
         return result
       }
-      console.log(datasetMaker())
+
+      function datasetMaker(){    
+        let result = [];    
+        for (const country of Object.entries(res.data)){
+          result.push({label:country[0],borderColor:randomColorGenerator(),data:(Object.values(country[1].All.dates)).reverse()})
+        }
+        return result
+      }      
 
       this.chartdata ={
-        labels: [...(Object.keys(covidData.Albania.All.dates)).reverse()],
+        labels: [...(Object.keys(res.data.Albania.All.dates)).reverse()],
         datasets:datasetMaker()
-        // [
-        //   {
-        //     label:covidData[0],
-        //     borderColor: "#00aa00",
-        //     data:[1,2,3,4,5,6,7]         
-        //   }
-         
-        // ]
-      };
-      console.log(covidData)
-      
+        
+      };      
+      console.log(covidDataMaker())
       this.loaded=true;
     })
     .catch((err)=>{
       console.log(err)
     })
     
-
-  }
+  },  
+ 
 }
 
 </script>
@@ -69,20 +88,4 @@ export default {
   color: #2c3e50;
   margin-top: 60px;
 }
-</style>
-
-data: ()=>({
-      chartdata:{
-          labels:["One","Two"],
-          dataset:[
-              {
-                label:'Data One',
-                data:[111,123]
-                }
-            ]
-      },
-      options:{
-        
-    }
-  }),
- 
+</style> 
