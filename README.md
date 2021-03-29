@@ -30,4 +30,4 @@ See [Configuration Reference](https://cli.vuejs.org/config/).
 
 ## Task #2
 
-Cli + vue-chartjs + chart.js at this moment 2:55h
+Recruitment task for the Atom Store made with: Vue Cli + vue-chartjs + chart.js
