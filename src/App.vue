@@ -1,5 +1,6 @@
 <template>
-  <div id="app">        
+  <div id="app">
+    <h3>Click country label to remove it from chart below</h3>
     <line-chart  v-if="loaded" :chartdata="chartdata" :options="options" />
   </div>  
 </template>
@@ -24,7 +25,6 @@ export default {
     return{
       loaded: false,
       chartdata:null,
-      covidData:null,
       options:{
         responsive: true,
         maintainAspectRatio: false
@@ -36,37 +36,40 @@ export default {
     axios.get(api_url)
       .then((res)=>{   
         
+      const covidData = res.data;
+
       function covidDataMaker(){
-        let result = [];
-        for(const country of Object.entries(res.data)){
-          result.push(
+        let top10 = [];
+        for(const country of Object.entries(covidData)){
+          top10.push(
             {country:country[1].All.country,
-              iso: country[1].All.iso,
+              dates: country[1].All.dates,
               population: country[1].All.population
               })          
         }
-        result.sort((a,b)=>{
+        top10.sort((a,b)=>{
           if(a.population>b.population)return -1;
           if(a.population<b.population)return 1;
           return 0
         });
-        return result
-      }
+        top10.splice(10,top10.length-1);
 
-      function datasetMaker(){    
-        let result = [];    
-        for (const country of Object.entries(res.data)){
-          result.push({label:country[0],borderColor:randomColorGenerator(),data:(Object.values(country[1].All.dates)).reverse()})
+        let result = [];
+        for (const country of top10){
+          result.push({
+            label:country.country,
+            borderColor: randomColorGenerator(),
+            data:(Object.values(country.dates)).reverse()
+          })         
         }
         return result
-      }      
+      }  
 
       this.chartdata ={
-        labels: [...(Object.keys(res.data.Albania.All.dates)).reverse()],
-        datasets:datasetMaker()
+        labels: [...(Object.keys(covidData.Albania.All.dates)).reverse()],
+        datasets:covidDataMaker()
         
-      };      
-      console.log(covidDataMaker())
+      };
       this.loaded=true;
     })
     .catch((err)=>{
@@ -86,6 +89,8 @@ export default {
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
   color: #2c3e50;
+  height: 100%;
+  background: #b4cdce2f;
   margin-top: 60px;
 }
 </style> 
